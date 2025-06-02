@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Registro de Ventas22.5.25</title>
+  <title>Registro de Ventas</title>
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -22,7 +21,7 @@
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h1, h2 {
+    h1 {
       color: #333;
     }
     input, button, textarea {
@@ -50,38 +49,16 @@
     .hidden {
       display: none;
     }
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #ccc;
-      border-top-color: #007bff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      margin-right: 5px;
-      vertical-align: middle;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    #historial {
-      text-align: left;
-      margin-top: 30px;
-      background: #e9ecef;
-      padding: 15px;
-      border-radius: 10px;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Registro de Ventas2.6.25.18.54</h1>
+    <h1>Registro de Ventas</h1>
 
     <label for="productoID">Número de Producto:</label>
     <input type="number" id="productoID" placeholder="Ingrese el número y presione Enter" />
 
     <button id="buscarProducto">Buscar Producto</button>
-    <button onclick="copiarProducto()">Copiar Número</button>
 
     <div id="productoInfo" class="hidden">
       <h2>Detalles del Producto</h2>
@@ -101,79 +78,30 @@
       <input type="text" id="vendedor" placeholder="Ingrese su nombre" />
 
       <button id="confirmarVenta">Confirmar Venta</button>
-      <button id="imprimir">Imprimir</button>
-      <button id="pdf">Exportar PDF</button>
-      <button id="enviarWhatsapp">Enviar por WhatsApp</button>
-      <button id="descargarExcel">Descargar Excel</button>
-      <button id="limpiar">Limpiar</button>
-    </div>
-
-    <div id="historial">
-      <h2>Historial de Ventas</h2>
-      <ul id="historialLista"></ul>
     </div>
   </div>
 
   <script>
-    const googleSheetURL = "https://script.google.com/macros/s/AKfycby0MlzTMR7pW6OHcn4Ylhb1KXFhFbB8rXmkBeA7DDXyj_rp-YsZ5enyCC0bEWY0olPbyA/exec";
-    const historialLista = document.getElementById("historialLista");
-    const historial = [];
+    const googleSheetURL = "https://script.google.com/macros/s/AKfycbwQ9X8holyDjs2weTZoDF8N7jb-Jij7-LJ5VFYnaFLe6WoQJcaYiYhhJDTKDumLt7fmyA/exec";
 
     const productoID = document.getElementById("productoID");
     const buscarProductoBtn = document.getElementById("buscarProducto");
     const productoInfo = document.getElementById("productoInfo");
     const vendedorInput = document.getElementById("vendedor");
     const confirmarVentaBtn = document.getElementById("confirmarVenta");
-    const limpiarBtn = document.getElementById("limpiar");
-    const imprimirBtn = document.getElementById("imprimir");
-    const whatsappBtn = document.getElementById("enviarWhatsapp");
-    const pdfBtn = document.getElementById("pdf");
-    const excelBtn = document.getElementById("descargarExcel");
     const observaciones = document.getElementById("observaciones");
 
-    const vendedorGuardado = localStorage.getItem("vendedor");
-    if (vendedorGuardado) vendedorInput.value = vendedorGuardado;
-
-    const historialGuardado = JSON.parse(localStorage.getItem("historial"));
-    if (historialGuardado) {
-      historialGuardado.forEach(data => historial.push(data));
-      actualizarListaHistorial();
-    }
-
-    function actualizarListaHistorial() {
-      historialLista.innerHTML = "";
-      historial.forEach(item => {
-        const li = document.createElement("li");
-        li.textContent = `${item.producto} - ${item.marca} ${item.modelo} - $${item.precio} - ${item.vendedor}`;
-        historialLista.appendChild(li);
-      });
-    }
-
-    function agregarAHistorial(data) {
-      historial.push(data);
-      localStorage.setItem("historial", JSON.stringify(historial));
-      actualizarListaHistorial();
-    }
-
-    function mostrarCargando() {
-      productoInfo.classList.remove("hidden");
-      document.getElementById("marca").innerHTML = '<span class="spinner"></span>Buscando...';
-      document.getElementById("modelo").innerText = "";
-      document.getElementById("color").innerText = "";
-      document.getElementById("familia").innerText = "";
-      document.getElementById("precio").innerText = "";
-      document.getElementById("fechaVenta").innerText = "";
-    }
+    buscarProductoBtn.addEventListener("click", buscarProducto);
+    productoID.addEventListener("keypress", e => { if (e.key === "Enter") buscarProducto(); });
+    confirmarVentaBtn?.addEventListener("click", confirmarVenta);
 
     function buscarProducto() {
       const id = productoID.value.trim();
-      if (!id || isNaN(id) || Number(id) <= 0) {
+      if (!id || isNaN(id)) {
         return Swal.fire("ID inválido", "Ingresá un número válido", "warning");
       }
 
-      mostrarCargando();
-      buscarProductoBtn.disabled = true;
-
+      productoInfo.classList.remove("hidden");
       fetch(`${googleSheetURL}?producto=${id}`)
         .then(res => res.json())
         .then(data => {
@@ -182,6 +110,7 @@
             productoInfo.classList.add("hidden");
             return;
           }
+
           document.getElementById("marca").innerText = data.marca;
           document.getElementById("modelo").innerText = data.modelo;
           document.getElementById("color").innerText = data.color;
@@ -192,8 +121,8 @@
         .catch(err => {
           console.error(err);
           Swal.fire("Error", "No se pudo buscar el producto", "error");
-        })
-        .finally(() => buscarProductoBtn.disabled = false);
+          productoInfo.classList.add("hidden");
+        });
     }
 
     function confirmarVenta() {
@@ -201,11 +130,9 @@
       const vendedor = vendedorInput.value.trim();
       const obs = observaciones.value;
 
-      if (!id || !vendedor) return Swal.fire("Faltan datos", "Completá todos los campos", "warning");
-
-      const marca = document.getElementById("marca").innerText;
-      const modelo = document.getElementById("modelo").innerText;
-      const precio = document.getElementById("precio").innerText;
+      if (!id || !vendedor) {
+        return Swal.fire("Faltan datos", "Completá todos los campos", "warning");
+      }
 
       fetch(googleSheetURL, {
         method: "POST",
@@ -220,62 +147,10 @@
       });
 
       Swal.fire("✅ Venta Confirmada", "Se registró correctamente", "success");
-      agregarAHistorial({ producto: id, marca, modelo, precio, vendedor });
-      localStorage.setItem("vendedor", vendedor);
       productoInfo.classList.add("hidden");
       productoID.value = "";
       observaciones.value = "";
     }
-
-    function exportarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.text("VENTA CONFIRMADA", 10, 10);
-      doc.text(`Producto: ${productoID.value}`, 10, 20);
-      doc.text(`Marca: ${document.getElementById("marca").innerText}`, 10, 30);
-      doc.text(`Modelo: ${document.getElementById("modelo").innerText}`, 10, 40);
-      doc.text(`Color: ${document.getElementById("color").innerText}`, 10, 50);
-      doc.text(`Precio: ${document.getElementById("precio").innerText}`, 10, 60);
-      doc.text(`Vendedor: ${document.getElementById("vendedor").value}`, 10, 70);
-      doc.text(`Obs: ${document.getElementById("observaciones").value}`, 10, 80);
-      doc.save("venta.pdf");
-    }
-
-    function enviarPorWhatsapp() {
-      const mensaje = `VENTA CONFIRMADA%0AProducto: ${productoID.value}%0AMarca: ${document.getElementById("marca").innerText}%0AModelo: ${document.getElementById("modelo").innerText}%0AColor: ${document.getElementById("color").innerText}%0APrecio: ${document.getElementById("precio").innerText}%0AVendedor: ${vendedorInput.value}%0AObservaciones: ${encodeURIComponent(observaciones.value)}`;
-      const url = `https://wa.me/?text=${mensaje}`;
-      window.open(url, "_blank");
-    }
-
-    function imprimir() {
-      window.print();
-    }
-
-    function copiarProducto() {
-      const producto = productoID.value;
-      if (producto) {
-        navigator.clipboard.writeText(producto);
-        Swal.fire("Copiado", "Número copiado al portapapeles", "success");
-      }
-    }
-
-    function limpiar() {
-      productoID.value = "";
-      vendedorInput.value = "";
-      observaciones.value = "";
-      productoInfo.classList.add("hidden");
-    }
-
-    buscarProductoBtn.addEventListener("click", buscarProducto);
-    productoID.addEventListener("keypress", e => { if (e.key === "Enter") buscarProducto(); });
-    confirmarVentaBtn.addEventListener("click", confirmarVenta);
-    limpiarBtn.addEventListener("click", limpiar);
-    imprimirBtn.addEventListener("click", imprimir);
-    whatsappBtn.addEventListener("click", enviarPorWhatsapp);
-    pdfBtn.addEventListener("click", exportarPDF);
-    excelBtn.addEventListener("click", () => {
-      window.open(googleSheetURL + "?action=export", "_blank");
-    });
   </script>
 </body>
 </html>
